@@ -1,0 +1,30 @@
+[project]
+name = "madescha"
+version = "0.0.0"
+description = "Document Sorting Helper"
+authors = [{ name = "cesko", email = "you@example.com" }]
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.11.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-v --cov=madescha --cov-report=term-missing"
+
+[tool.coverage.report]
+omit = ["tests/*"]
+fail_under = 80
+
+[project.scripts]
+madescha = "madescha.main:main"  # points to main() function in main.py

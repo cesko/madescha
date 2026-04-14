@@ -1,11 +1,11 @@
 from pydantic import BaseModel, Field
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 
 class PersonOrOrganisation(BaseModel):
     name : str = Field("unkown", description="Name of Person or Organisation")
+    address: str = Field("unkown", description="Postal Address: Streetname and number, postal code, city")
     website : str = Field("unkown", description="Website")
-    address: str = Field("unkown", description="Postal Address")
 
 class Date(BaseModel):
     year : int = Field(0, description="Year")
@@ -14,9 +14,10 @@ class Date(BaseModel):
 
 class Document(BaseModel):
     title : str = Field("unkown", description="Title of the document")
+    reference : str = Field("unknown", description="Contract number, membership number, customer number or similar.")
     date : Date = Field( Date(), description="date of this document")
-    sender : PersonOrOrganisation = Field( PersonOrOrganisation(), description="Sending person or organisation. Creator of the document")
-    receiver : PersonOrOrganisation = Field( PersonOrOrganisation(), description="Receiving person or organisation.")
+    sender : PersonOrOrganisation = Field( PersonOrOrganisation(), description="Sending person or organisation. This is the creator of the document")
+    receiver : PersonOrOrganisation = Field( PersonOrOrganisation(), description="Receiving person. Usually addressed in the letter.")
     keywords : list[str] = Field( [], description="List of keywords (1-3), e.g. 'invoice'")
 
 @dataclass
@@ -32,17 +33,18 @@ class LlmResult:
 
 @dataclass
 class DocumentFields:
-    date : Date
-    author : str
-    title : str
+    date : Date = field(default_factory=Date)
+    author : str = "unknown"
+    title : str = "unknown"
 
 
 @dataclass
 class AutoProcessingStatus:
+    running: bool
     success: bool
     status_message : str
-    ocr_text : str = ""
     fields : DocumentFields
+    ocr_text : str = ""
 
 
 @dataclass

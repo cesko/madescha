@@ -2,10 +2,9 @@ import sys
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QCommandLineParser, QCommandLineOption
 
-from mainwindow import MainWindow
+from madescha.gui.mainwindow import MainWindow
 
-
-if __name__ == "__main__":
+def main():
     app = QApplication(sys.argv)
     app.setApplicationName("PDF Viewer")
     app.setApplicationVersion("1.0")
@@ -26,3 +25,7 @@ if __name__ == "__main__":
         window.open_pdf(positional[0])
 
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()
