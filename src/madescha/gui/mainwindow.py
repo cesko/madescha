@@ -12,13 +12,15 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt
 
+from madescha.gui.madescha_widgets import (OpenFileWidget, ProcessingWidget, DocumentInfoWidget)
+
 
 class MainWindow(QMainWindow):
     """Main window with a two-column layout: PDF viewer on the left, controls on the right."""
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("PDF Viewer")
+        self.setWindowTitle("Madescha")
         self.resize(1200, 800)
 
         self._document = QPdfDocument(self)
@@ -46,88 +48,98 @@ class MainWindow(QMainWindow):
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(12)
 
-        # File group
-        file_group = QGroupBox("File")
-        file_layout = QVBoxLayout(file_group)
+        open_file = OpenFileWidget()
+        processing = ProcessingWidget()
+        fields = DocumentInfoWidget()
 
-        self._open_button = QPushButton("Open PDF…")
-        self._open_button.clicked.connect(self._open_pdf)
-        file_layout.addWidget(self._open_button)
+        right_layout.addWidget(open_file)
+        right_layout.addWidget(processing)
+        right_layout.addWidget(fields)
 
-        self._close_button = QPushButton("Close PDF")
-        self._close_button.clicked.connect(self._close_pdf)
-        file_layout.addWidget(self._close_button)
 
-        right_layout.addWidget(file_group)
 
-        # Navigation group
-        nav_group = QGroupBox("Navigation")
-        nav_layout = QVBoxLayout(nav_group)
+        # # File group
+        # file_group = QGroupBox("File")
+        # file_layout = QVBoxLayout(file_group)
 
-        page_row = QHBoxLayout()
-        page_row.addWidget(QLabel("Page:"))
-        self._page_spin = QSpinBox()
-        self._page_spin.setMinimum(1)
-        self._page_spin.valueChanged.connect(self._go_to_page)
-        page_row.addWidget(self._page_spin)
-        self._page_count_label = QLabel("/ 0")
-        page_row.addWidget(self._page_count_label)
-        nav_layout.addLayout(page_row)
+        # self._open_button = QPushButton("Open PDF…")
+        # self._open_button.clicked.connect(self._open_pdf)
+        # file_layout.addWidget(self._open_button)
 
-        nav_buttons = QHBoxLayout()
-        self._prev_button = QPushButton("◀ Prev")
-        self._prev_button.clicked.connect(self._prev_page)
-        nav_buttons.addWidget(self._prev_button)
+        # self._close_button = QPushButton("Close PDF")
+        # self._close_button.clicked.connect(self._close_pdf)
+        # file_layout.addWidget(self._close_button)
 
-        self._next_button = QPushButton("Next ▶")
-        self._next_button.clicked.connect(self._next_page)
-        nav_buttons.addWidget(self._next_button)
-        nav_layout.addLayout(nav_buttons)
+        # right_layout.addWidget(file_group)
 
-        right_layout.addWidget(nav_group)
+        # # Navigation group
+        # nav_group = QGroupBox("Navigation")
+        # nav_layout = QVBoxLayout(nav_group)
 
-        # Zoom group
-        zoom_group = QGroupBox("Zoom")
-        zoom_layout = QVBoxLayout(zoom_group)
+        # page_row = QHBoxLayout()
+        # page_row.addWidget(QLabel("Page:"))
+        # self._page_spin = QSpinBox()
+        # self._page_spin.setMinimum(1)
+        # self._page_spin.valueChanged.connect(self._go_to_page)
+        # page_row.addWidget(self._page_spin)
+        # self._page_count_label = QLabel("/ 0")
+        # page_row.addWidget(self._page_count_label)
+        # nav_layout.addLayout(page_row)
 
-        zoom_row = QHBoxLayout()
-        zoom_row.addWidget(QLabel("Factor:"))
-        self._zoom_spin = QDoubleSpinBox()
-        self._zoom_spin.setRange(0.1, 5.0)
-        self._zoom_spin.setSingleStep(0.1)
-        self._zoom_spin.setValue(1.0)
-        self._zoom_spin.setSuffix("×")
-        self._zoom_spin.valueChanged.connect(self._apply_zoom)
-        zoom_row.addWidget(self._zoom_spin)
-        zoom_layout.addLayout(zoom_row)
+        # nav_buttons = QHBoxLayout()
+        # self._prev_button = QPushButton("◀ Prev")
+        # self._prev_button.clicked.connect(self._prev_page)
+        # nav_buttons.addWidget(self._prev_button)
 
-        zoom_buttons = QHBoxLayout()
-        zoom_in_btn = QPushButton("Zoom In")
-        zoom_in_btn.clicked.connect(lambda: self._zoom_step(0.1))
-        zoom_buttons.addWidget(zoom_in_btn)
+        # self._next_button = QPushButton("Next ▶")
+        # self._next_button.clicked.connect(self._next_page)
+        # nav_buttons.addWidget(self._next_button)
+        # nav_layout.addLayout(nav_buttons)
 
-        zoom_out_btn = QPushButton("Zoom Out")
-        zoom_out_btn.clicked.connect(lambda: self._zoom_step(-0.1))
-        zoom_buttons.addWidget(zoom_out_btn)
-        zoom_layout.addLayout(zoom_buttons)
+        # right_layout.addWidget(nav_group)
 
-        zoom_fit_btn = QPushButton("Fit to Width")
-        zoom_fit_btn.clicked.connect(self._fit_to_width)
-        zoom_layout.addWidget(zoom_fit_btn)
+        # # Zoom group
+        # zoom_group = QGroupBox("Zoom")
+        # zoom_layout = QVBoxLayout(zoom_group)
 
-        right_layout.addWidget(zoom_group)
+        # zoom_row = QHBoxLayout()
+        # zoom_row.addWidget(QLabel("Factor:"))
+        # self._zoom_spin = QDoubleSpinBox()
+        # self._zoom_spin.setRange(0.1, 5.0)
+        # self._zoom_spin.setSingleStep(0.1)
+        # self._zoom_spin.setValue(1.0)
+        # self._zoom_spin.setSuffix("×")
+        # self._zoom_spin.valueChanged.connect(self._apply_zoom)
+        # zoom_row.addWidget(self._zoom_spin)
+        # zoom_layout.addLayout(zoom_row)
 
-        # Document info group
-        info_group = QGroupBox("Document Info")
-        info_layout = QFormLayout(info_group)
-        self._title_label = QLabel("—")
-        self._title_label.setWordWrap(True)
-        self._author_label = QLabel("—")
-        self._pages_label = QLabel("—")
-        info_layout.addRow("Title:", self._title_label)
-        info_layout.addRow("Author:", self._author_label)
-        info_layout.addRow("Pages:", self._pages_label)
-        right_layout.addWidget(info_group)
+        # zoom_buttons = QHBoxLayout()
+        # zoom_in_btn = QPushButton("Zoom In")
+        # zoom_in_btn.clicked.connect(lambda: self._zoom_step(0.1))
+        # zoom_buttons.addWidget(zoom_in_btn)
+
+        # zoom_out_btn = QPushButton("Zoom Out")
+        # zoom_out_btn.clicked.connect(lambda: self._zoom_step(-0.1))
+        # zoom_buttons.addWidget(zoom_out_btn)
+        # zoom_layout.addLayout(zoom_buttons)
+
+        # zoom_fit_btn = QPushButton("Fit to Width")
+        # zoom_fit_btn.clicked.connect(self._fit_to_width)
+        # zoom_layout.addWidget(zoom_fit_btn)
+
+        # right_layout.addWidget(zoom_group)
+
+        # # Document info group
+        # info_group = QGroupBox("Document Info")
+        # info_layout = QFormLayout(info_group)
+        # self._title_label = QLabel("—")
+        # self._title_label.setWordWrap(True)
+        # self._author_label = QLabel("—")
+        # self._pages_label = QLabel("—")
+        # info_layout.addRow("Title:", self._title_label)
+        # info_layout.addRow("Author:", self._author_label)
+        # info_layout.addRow("Pages:", self._pages_label)
+        # right_layout.addWidget(info_group)
 
         # Spacer
         right_layout.addStretch()
@@ -208,12 +220,13 @@ class MainWindow(QMainWindow):
 
     def _update_controls(self) -> None:
         """Enable or disable controls depending on whether a document is loaded."""
-        loaded = self._document.pageCount() > 0
-        self._close_button.setEnabled(loaded)
-        self._prev_button.setEnabled(loaded)
-        self._next_button.setEnabled(loaded)
-        self._page_spin.setEnabled(loaded)
-        self._zoom_spin.setEnabled(loaded)
+        # loaded = self._document.pageCount() > 0
+        # self._close_button.setEnabled(loaded)
+        # self._prev_button.setEnabled(loaded)
+        # self._next_button.setEnabled(loaded)
+        # self._page_spin.setEnabled(loaded)
+        # self._zoom_spin.setEnabled(loaded)
+        pass
 
 
 if __name__ == "__main__":

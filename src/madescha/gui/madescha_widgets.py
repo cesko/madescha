@@ -19,7 +19,7 @@ from PySide6.QtCore import Qt, Signal, Slot, QDate
 from madescha.core.datatypes import AutoProcessingStatus, DocumentFields, Date
 
 
-class OpenFile(QWidget):
+class OpenFileWidget(QWidget):
     """Widget that provides a file selection dialog through a button click."""
     
     file_selected = Signal(str)
@@ -214,7 +214,7 @@ class ProcessingWidget(QWidget):
         dialog.exec()
 
 
-class DocumentWidget(QWidget):
+class DocumentInfoWidget(QWidget):
     """
     A form widget that displays and edits document metadata.
 
@@ -359,9 +359,9 @@ if __name__ == "__main__":
     container = QWidget()
     layout = QVBoxLayout(container)  # Set layout on the container
 
-    open_file = OpenFile()
+    open_file = OpenFileWidget()
     processing = ProcessingWidget()
-    fields = DocumentWidget()
+    fields = DocumentInfoWidget()
 
     layout.addWidget(open_file)
     layout.addWidget(processing)

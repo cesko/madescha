@@ -19,3 +19,16 @@ Helps you organise important documents, letters, certificates, with out vendor l
 - Developed in Python
 - Qt6 GUI framework
 - Depends of Ollama for local AI support
+
+## TODOs
+ - [x] Implement all Madescha Widgets
+ - [x] Show all Madescha Widgets in Main Window
+ - [ ] Add Slots / Signals for Medascha Widgets
+ - [ ] Hold and Process Document in Main
+ - [ ] Connect Open Documents -> Display Document in Document Viewer
+ - [ ] Run automated Process OCR/AI with status feedback
+ - [ ] Apply and edit document info
+ - [ ] Implement Save Document Widget and the ability to save documents
+ - [ ] Set tags for document
+ - [ ] Settings file storage and load
+ - [ ] Change settings in App
