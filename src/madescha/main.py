@@ -5,7 +5,7 @@ from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QCommandLineParser, QCommandLineOption
 
 from madescha.gui.mainwindow import MainWindow
-from madescha.core.datatypes import DocumentInfo, Date, AutoProcessingStatus
+from madescha.core.datatypes import DocumentInfo, Date, AutoProcessingStatus, OcrResult, LlmResult
 
 from PySide6.QtCore import QObject, Signal
 
@@ -24,16 +24,50 @@ class Madescha(QObject):
             self._document_path = path
             self.pdf_loaded.emit(self._document_path)
 
+        self._auto_processing()
+
     def close_document(self):
         self._document_path = None
         pass
-
         
-    def run_ocr(self):
-        pass
+    def run_ocr(self) -> OcrResult:
+        # TODO
+        return OcrResult("--not processed--", False)
 
-    def run_llm(self):
-        pass
+    def run_llm(self) -> LlmResult:
+        # TODO
+        doc_info = DocumentInfo(Date(0, 0, 0))
+        return LlmResult(doc_info, False, "not processed!")
+    
+    def _auto_processing(self):
+        status = AutoProcessingStatus(True, False, "Running OCR...")
+        self.auto_processing_status_changed.emit(status)
+        print(status.status_message)
+
+        ocr_result = self.run_ocr()
+
+        if ocr_result.success:
+            status.status_message = "Running LLM"
+            status.ocr_text = ocr_result.text
+            self.auto_processing_status_changed.emit(status)
+            print(status.status_message)
+        else:
+            status.running = False
+            status.success = False
+            status.status_message = "OCR Failed"
+            self.auto_processing_status_changed.emit(status)
+            print(status.status_message)
+            return
+        
+        llm_result = self.run_llm()
+        
+        status.running = False
+        status.success = llm_result.success
+        status.status_message = llm_result.message
+        status.fields = llm_result.document_info
+        self.auto_processing_status_changed.emit(status)
+        print(status.status_message)
+
 
 
 def main():
@@ -68,6 +102,8 @@ def gui(file=None):
 
     window.file_selected.connect(madescha.open_document)
     madescha.pdf_loaded.connect(window.open_pdf)
+    madescha.auto_processing_status_changed.connect(window.set_auto_processing)   
+
 
     window.show()
 

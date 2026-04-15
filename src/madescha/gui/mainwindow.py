@@ -55,17 +55,17 @@ class MainWindow(QMainWindow):
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(12)
 
-        open_file = OpenFileWidget()
-        processing = ProcessingWidget()
-        document_info = DocumentInfoWidget()
+        self._open_file_widget = OpenFileWidget()
+        self._processing_widget = ProcessingWidget()
+        self._document_info_widget = DocumentInfoWidget()
 
-        right_layout.addWidget(open_file)
-        right_layout.addWidget(processing)
-        right_layout.addWidget(document_info)
+        right_layout.addWidget(self._open_file_widget)
+        right_layout.addWidget(self._processing_widget)
+        right_layout.addWidget(self._document_info_widget)
 
         # - connect -
-        open_file.file_selected.connect(self.file_selected)
-        document_info.info_updated.connect(self.document_info_updated)
+        self._open_file_widget.file_selected.connect(self.file_selected)
+        self._document_info_widget.info_updated.connect(self.document_info_updated)
 
 
         # # File group
@@ -181,6 +181,7 @@ class MainWindow(QMainWindow):
         # self._update_controls()
 
     def set_auto_processing(self, status:AutoProcessingStatus):
+        self._processing_widget.set_status(status)
         pass
 
 
