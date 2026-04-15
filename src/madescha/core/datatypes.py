@@ -32,7 +32,7 @@ class LlmResult:
     message : str
 
 @dataclass
-class DocumentFields:
+class DocumentInfo:
     date : Date = field(default_factory=Date)
     author : str = "unknown"
     title : str = "unknown"
@@ -43,7 +43,7 @@ class AutoProcessingStatus:
     running: bool
     success: bool
     status_message : str
-    fields : DocumentFields
+    fields : DocumentInfo = None
     ocr_text : str = ""
 
 

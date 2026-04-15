@@ -10,13 +10,19 @@ from PySide6.QtWidgets import (
     QMessageBox, QPushButton, QVBoxLayout, QHBoxLayout, QGroupBox, 
     QFormLayout, QWidget, QSpinBox, QDoubleSpinBox, QSizePolicy
 )
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal, Slot
 
 from madescha.gui.madescha_widgets import (OpenFileWidget, ProcessingWidget, DocumentInfoWidget)
+
+from madescha.core.datatypes import DocumentInfo, Document, AutoProcessingStatus
 
 
 class MainWindow(QMainWindow):
     """Main window with a two-column layout: PDF viewer on the left, controls on the right."""
+
+    file_selected = Signal(str)
+    document_info_updated = Signal(DocumentInfo)
+    #auto_processing_requested = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -38,6 +44,7 @@ class MainWindow(QMainWindow):
         self._pdf_view.setDocument(self._document)
         self._pdf_view.setPageMode(QPdfView.PageMode.MultiPage)
         self._pdf_view.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self._pdf_view.setZoomMode(QPdfView.ZoomMode.FitToWidth)
 
         main_layout.addWidget(self._pdf_view, stretch=3)
 
@@ -50,12 +57,15 @@ class MainWindow(QMainWindow):
 
         open_file = OpenFileWidget()
         processing = ProcessingWidget()
-        fields = DocumentInfoWidget()
+        document_info = DocumentInfoWidget()
 
         right_layout.addWidget(open_file)
         right_layout.addWidget(processing)
-        right_layout.addWidget(fields)
+        right_layout.addWidget(document_info)
 
+        # - connect -
+        open_file.file_selected.connect(self.file_selected)
+        document_info.info_updated.connect(self.document_info_updated)
 
 
         # # File group
@@ -157,18 +167,22 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"Could not open PDF:\n{path}")
             return
 
-        page_count = self._document.pageCount()
-        self._page_spin.setMaximum(max(page_count, 1))
-        self._page_spin.setValue(1)
-        self._page_count_label.setText(f"/ {page_count}")
-        self._pages_label.setText(str(page_count))
-        self._title_label.setText(
-            self._document.metaData(QPdfDocument.MetaDataField.Title) or "—"
-        )
-        self._author_label.setText(
-            self._document.metaData(QPdfDocument.MetaDataField.Author) or "—"
-        )
-        self._update_controls()
+        # page_count = self._document.pageCount()
+        # self._page_spin.setMaximum(max(page_count, 1))
+        # self._page_spin.setValue(1)
+        # self._page_count_label.setText(f"/ {page_count}")
+        # self._pages_label.setText(str(page_count))
+        # self._title_label.setText(
+        #     self._document.metaData(QPdfDocument.MetaDataField.Title) or "—"
+        # )
+        # self._author_label.setText(
+        #     self._document.metaData(QPdfDocument.MetaDataField.Author) or "—"
+        # )
+        # self._update_controls()
+
+    def set_auto_processing(self, status:AutoProcessingStatus):
+        pass
+
 
     def _open_pdf(self) -> None:
         """Open a file dialog to select and load a PDF."""
@@ -181,38 +195,38 @@ class MainWindow(QMainWindow):
     def _close_pdf(self) -> None:
         """Close the currently loaded PDF document."""
         self._document.close()
-        self._page_spin.setMaximum(1)
-        self._page_spin.setValue(1)
-        self._page_count_label.setText("/ 0")
-        self._title_label.setText("—")
-        self._author_label.setText("—")
-        self._pages_label.setText("—")
-        self._update_controls()
+        # self._page_spin.setMaximum(1)
+        # self._page_spin.setValue(1)
+        # self._page_count_label.setText("/ 0")
+        # self._title_label.setText("—")
+        # self._author_label.setText("—")
+        # self._pages_label.setText("—")
+        # self._update_controls()
 
-    def _go_to_page(self, page_number: int) -> None:
-        """Navigate the PDF view to *page_number* (1-based)."""
-        navigator = self._pdf_view.pageNavigator()
-        navigator.jump(page_number - 1, navigator.currentLocation(), navigator.currentZoom())
+    # def _go_to_page(self, page_number: int) -> None:
+    #     """Navigate the PDF view to *page_number* (1-based)."""
+    #     navigator = self._pdf_view.pageNavigator()
+    #     navigator.jump(page_number - 1, navigator.currentLocation(), navigator.currentZoom())
 
-    def _prev_page(self) -> None:
-        """Go to the previous page."""
-        self._page_spin.setValue(max(1, self._page_spin.value() - 1))
+    # def _prev_page(self) -> None:
+    #     """Go to the previous page."""
+    #     self._page_spin.setValue(max(1, self._page_spin.value() - 1))
 
-    def _next_page(self) -> None:
-        """Go to the next page."""
-        self._page_spin.setValue(
-            min(self._document.pageCount(), self._page_spin.value() + 1)
-        )
+    # def _next_page(self) -> None:
+    #     """Go to the next page."""
+    #     self._page_spin.setValue(
+    #         min(self._document.pageCount(), self._page_spin.value() + 1)
+    #     )
 
-    def _apply_zoom(self, factor: float) -> None:
-        """Apply *factor* as the zoom level of the PDF view."""
-        navigator = self._pdf_view.pageNavigator()
-        navigator.jump(navigator.currentPage(), navigator.currentLocation(), factor)
+    # def _apply_zoom(self, factor: float) -> None:
+    #     """Apply *factor* as the zoom level of the PDF view."""
+    #     navigator = self._pdf_view.pageNavigator()
+    #     navigator.jump(navigator.currentPage(), navigator.currentLocation(), factor)
 
-    def _zoom_step(self, delta: float) -> None:
-        """Increment or decrement zoom by *delta*."""
-        new_value = round(self._zoom_spin.value() + delta, 2)
-        self._zoom_spin.setValue(max(0.1, min(5.0, new_value)))
+    # def _zoom_step(self, delta: float) -> None:
+    #     """Increment or decrement zoom by *delta*."""
+    #     new_value = round(self._zoom_spin.value() + delta, 2)
+    #     self._zoom_spin.setValue(max(0.1, min(5.0, new_value)))
 
     def _fit_to_width(self) -> None:
         """Set zoom mode to fit the page width."""

@@ -16,7 +16,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal, Slot, QDate
 
-from madescha.core.datatypes import AutoProcessingStatus, DocumentFields, Date
+from madescha.core.datatypes import AutoProcessingStatus, DocumentInfo, Date
 
 
 class OpenFileWidget(QWidget):
@@ -125,7 +125,7 @@ class ProcessingWidget(QWidget):
         self._state: ProcessingState = ProcessingState.NONE
         self._setup_ui()
         self._ocr_text = ""
-        self._fields = DocumentFields()
+        self._fields = DocumentInfo()
 
     def _setup_ui(self) -> None:
         """Set up the user interface components."""
@@ -220,11 +220,11 @@ class DocumentInfoWidget(QWidget):
 
     Signals
     -------
-    document_changed : Signal(DocumentFields)
+    info_updated : Signal(DocumentFields)
         Emitted whenever any field value changes.
     """
 
-    document_changed = Signal(DocumentFields)
+    info_updated = Signal(DocumentInfo)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -268,10 +268,10 @@ class DocumentInfoWidget(QWidget):
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _current_document(self) -> DocumentFields:
+    def _current_document(self) -> DocumentInfo:
         """Build a :class:`DocumentFields` snapshot from the current UI state."""
         q_date: QDate = self._date_edit.date()
-        return DocumentFields(
+        return DocumentInfo(
             author=self._author_edit.text() or "unknown",
             title=self._title_edit.text() or "unknown",
             date=Date(
@@ -283,14 +283,14 @@ class DocumentInfoWidget(QWidget):
 
     def _on_field_changed(self, *_args: object) -> None:
         """Emit :attr:`document_changed` whenever any field is edited."""
-        self.document_changed.emit(self._current_document())
+        self.info_updated.emit(self._current_document())
 
     # ------------------------------------------------------------------
     # Public slots
     # ------------------------------------------------------------------
 
-    @Slot(DocumentFields)
-    def set_document(self, doc: DocumentFields) -> None:
+    @Slot(DocumentInfo)
+    def set_document(self, doc: DocumentInfo) -> None:
         """
         Populate all fields from *doc*.
 

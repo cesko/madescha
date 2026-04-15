@@ -23,8 +23,9 @@ Helps you organise important documents, letters, certificates, with out vendor l
 ## TODOs
  - [x] Implement all Madescha Widgets
  - [x] Show all Madescha Widgets in Main Window
- - [ ] Add Slots / Signals for Medascha Widgets
- - [ ] Hold and Process Document in Main
+ - [x] Add Slots / Signals for Medascha Widgets in Main Window
+ - [x] Hold and Process Document in Main
+ - [ ] Full processing pipeline in Main
  - [ ] Connect Open Documents -> Display Document in Document Viewer
  - [ ] Run automated Process OCR/AI with status feedback
  - [ ] Apply and edit document info
@@ -32,3 +33,9 @@ Helps you organise important documents, letters, certificates, with out vendor l
  - [ ] Set tags for document
  - [ ] Settings file storage and load
  - [ ] Change settings in App
+
+
+## Dev Notes
+
+- Install with `pip install -e .`
+- Run with `medascha`
