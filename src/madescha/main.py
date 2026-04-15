@@ -6,10 +6,15 @@ from PySide6.QtCore import QCommandLineParser, QCommandLineOption
 
 from madescha.gui.mainwindow import MainWindow
 from madescha.core.datatypes import DocumentInfo, Date, AutoProcessingStatus, OcrResult, LlmResult
+from madescha.core.ocr_processor import OcrProcessor
 
 from PySide6.QtCore import QObject, Signal
 
 class Madescha(QObject):
+    """
+    The Madescha Logic and Processing Pipeline.
+    Independent of GUI but uses Qt Signals and Slots as API
+    """
     pdf_loaded = Signal(str)
     pdf_load_failed = Signal(str)
     auto_processing_status_changed = Signal(AutoProcessingStatus)
@@ -18,6 +23,8 @@ class Madescha(QObject):
         super().__init__()
 
         self._document_path = None
+
+        self._ocr_processor = OcrProcessor()
 
     def open_document(self, path:str):
         if os.path.exists(path):
@@ -31,13 +38,26 @@ class Madescha(QObject):
         pass
         
     def run_ocr(self) -> OcrResult:
-        # TODO
-        return OcrResult("--not processed--", False)
+        result = OcrResult()
+        
+        self._ocr_processor.open_document(self._document_path)
+        try:
+            self._ocr_processor.run()
+        except Exception as e:
+            result.success = False
+            result.message = str(e)
+            return result
+        
+        result.success = True
+        result.message = "OCR done"
+        result.text = self._ocr_processor.get_text()
+        return result
+    
 
     def run_llm(self) -> LlmResult:
         # TODO
-        doc_info = DocumentInfo(Date(0, 0, 0))
-        return LlmResult(doc_info, False, "not processed!")
+        doc_info = DocumentInfo()
+        return LlmResult(doc_info, False, "LLM not processed!")
     
     def _auto_processing(self):
         status = AutoProcessingStatus(True, False, "Running OCR...")
@@ -47,14 +67,14 @@ class Madescha(QObject):
         ocr_result = self.run_ocr()
 
         if ocr_result.success:
-            status.status_message = "Running LLM"
+            status.status_message = "OCR done. Running LLM..."
             status.ocr_text = ocr_result.text
             self.auto_processing_status_changed.emit(status)
             print(status.status_message)
         else:
             status.running = False
             status.success = False
-            status.status_message = "OCR Failed"
+            status.status_message = ocr_result.message
             self.auto_processing_status_changed.emit(status)
             print(status.status_message)
             return

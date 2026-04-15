@@ -22,8 +22,9 @@ class Document(BaseModel):
 
 @dataclass
 class OcrResult:
-    text: str
-    success : bool
+    text: str = ""
+    success : bool = False
+    message: str = ""
 
 @dataclass
 class LlmResult:
