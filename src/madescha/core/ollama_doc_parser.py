@@ -4,7 +4,7 @@ from madescha.core.datatypes import PersonOrOrganisation, Date, Document
 
 class OllamaDocumentParser:
 
-    def __init__(self, model:str):
+    def __init__(self, model:str = "phi4-mini"):
         self._model = model
 
     def _generate_system_prompt(self, response_scheme:str) -> dict:

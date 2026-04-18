@@ -28,9 +28,9 @@ class OcrResult:
 
 @dataclass
 class LlmResult:
-    document_info: Document
-    success : bool
-    message : str
+    document_info: Document = field(default_factory=Document)
+    success : bool = False
+    message : str = ""
 
 @dataclass
 class DocumentInfo:
