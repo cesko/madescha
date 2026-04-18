@@ -3,6 +3,8 @@ from pydantic import BaseModel, Field
 from dataclasses import dataclass, field
 from enum import Enum
 
+from madescha.utils.utils import organisation_short_name
+
 # class PersonOrOrganisation(BaseModel):
 #     name : str = Field("unkown", description="Name of Person or Organisation")
 #     address: str = Field("unkown", description="Postal Address: Streetname and number, postal code, city")
@@ -23,9 +25,9 @@ from enum import Enum
 
 
 class PersonOrOrganisation(BaseModel):
-    name : str = Field("unkown", description="Name der Person oder Organisation")
-    address: str = Field("unkown", description="Anschrift: Straße und Hausnummer, Postleitzahl, Stadt")
-    website : str = Field("unkown", description="Website. Wenn nicht explizit angegeben, dann nimm die Domain der E-Mailadresse")
+    name : str = Field("unknown", description="Name der Person oder Organisation")
+    address: str = Field("unknown", description="Anschrift: Straße und Hausnummer, Postleitzahl, Stadt")
+    website : str = Field("unknown", description="Website. Wenn nicht explizit angegeben, dann nimm die Domain der E-Mailadresse")
 
 class Date(BaseModel):
     year : int = Field(0, description="Year")
@@ -42,7 +44,7 @@ class Date(BaseModel):
         return f"{self.year:04d}{self.month:02d}{self.day:02d}"
 
 class Document(BaseModel):
-    title : str = Field("unkown", description="Titel des Dokumentes. Bei Briefen der Betreff.")
+    title : str = Field("unknown", description="Titel des Dokumentes. Bei Briefen der Betreff.")
     reference : str = Field("unknown", description="Vertragsnummer, Zeichen, Kundennummer oder ähnliches.")
     date : Date = Field( Date(), description="date of this document")
     sender : PersonOrOrganisation = Field( PersonOrOrganisation(), description="Absender (Person oder Organisation). Dies ist der Ersteller / Autor des Briefes.")
@@ -69,11 +71,12 @@ class LlmResult:
 class DocumentInfo:
     date : Date = field(default_factory=Date)
     author : str = "unknown"
+    author_short : str = "unknown"
     title : str = "unknown"
 
     @staticmethod
     def fromDocument(doc:Document) -> DocumentInfo:
-        return DocumentInfo(doc.date, doc.sender.name, doc.title)
+        return DocumentInfo(doc.date, doc.sender.name, organisation_short_name(doc.sender.name, doc.sender.website), doc.title)
 
 
 @dataclass

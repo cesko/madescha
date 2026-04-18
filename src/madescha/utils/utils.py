@@ -2,7 +2,7 @@ import re
 from urllib.parse import urlparse
 import tldextract
 
-from madescha.core.datatypes import PersonOrOrganisation
+#from madescha.core.datatypes import PersonOrOrganisation
 
 # Legal suffixes to remove for companies
 LEGAL_SUFFIXES = [
@@ -101,29 +101,31 @@ def _person_short_name(name: str) -> str:
 
 def _organisation_short_name(name: str) -> str:
     """Generate a short name for an organisation by stripping legal suffixes.
-    
+
     Args:
         name: Full name of the organisation.
-        
+
     Returns:
-        Short name without legal suffixes, lowercased and stripped.
+        Short name without legal suffixes, lowercased and stripped,
+        with spaces preserved between words.
     """
     short = name.strip()
-    
+
     for suffix in LEGAL_SUFFIXES:
         short = re.sub(suffix, '', short, flags=re.IGNORECASE)
-    
+
     # Remove trailing punctuation and whitespace
     short = re.sub(r'[\s,.\-&]+$', '', short).strip()
     short = short.lower()
-    # Replace spaces and special chars with empty string or underscore
-    short = re.sub(r'\s+', '', short)
-    short = re.sub(r'[^a-z0-9äöüß]', '', short)
-    
-    return short
+    # Normalize multiple spaces into one, but keep single spaces
+    short = re.sub(r'\s+', ' ', short)
+    # Remove special chars but keep spaces, letters and digits
+    short = re.sub(r'[^a-z0-9äöüß ]', '', short)
+
+    return short.strip()
 
 
-def organisation_short_name(organisation: PersonOrOrganisation) -> str:
+def organisation_short_name(name:str, url:str = "") -> str:
     """Generate a short identifier for a person or organisation.
 
     - If the entity has a valid website, the domain is used as the short name.
@@ -139,10 +141,9 @@ def organisation_short_name(organisation: PersonOrOrganisation) -> str:
         A short string identifier for the given entity.
     """
     # Prefer domain from website if available
-    domain = _extract_domain(organisation.website)
+    domain = _extract_domain(url)
     if domain:
         return domain
 
-    name = organisation.name
 
     return _organisation_short_name(name)

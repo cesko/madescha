@@ -260,6 +260,9 @@ class DocumentInfoWidget(QWidget):
         self._author_edit = QLineEdit(self)
         self._author_edit.setPlaceholderText("unknown")
 
+        self._author_short_edit = QLineEdit(self)
+        self._author_short_edit.setPlaceholderText("unknown")
+
         self._title_edit = QLineEdit(self)
         self._title_edit.setPlaceholderText("unknown")
 
@@ -269,6 +272,7 @@ class DocumentInfoWidget(QWidget):
         self._date_edit.setDate(QDate(1, 1, 1))  # matches Date() defaults
 
         layout.addRow("Author", self._author_edit)
+        layout.addRow("Author Short", self._author_short_edit)
         layout.addRow("Title", self._title_edit)
         layout.addRow("Date", self._date_edit)
 
@@ -277,6 +281,7 @@ class DocumentInfoWidget(QWidget):
     def _connect_signals(self) -> None:
         """Wire internal widget signals to the unified change handler."""
         self._author_edit.textChanged.connect(self._on_field_changed)
+        self._author_short_edit.textChanged.connect(self._on_field_changed)
         self._title_edit.textChanged.connect(self._on_field_changed)
         self._date_edit.dateChanged.connect(self._on_field_changed)
 
@@ -289,6 +294,7 @@ class DocumentInfoWidget(QWidget):
         q_date: QDate = self._date_edit.date()
         return DocumentInfo(
             author=self._author_edit.text() or "unknown",
+            author_short=self._author_short_edit.text() or "unknown",
             title=self._title_edit.text() or "unknown",
             date=Date(
                 year=q_date.year(),
@@ -318,14 +324,17 @@ class DocumentInfoWidget(QWidget):
         """
         # Block individual signals so we emit document_changed only once.
         self._author_edit.blockSignals(True)
+        self._author_short_edit.blockSignals(True)
         self._title_edit.blockSignals(True)
         self._date_edit.blockSignals(True)
 
         self._author_edit.setText(doc.author)
+        self._author_short_edit.setText(doc.author_short)
         self._title_edit.setText(doc.title)
         self._date_edit.setDate(QDate(doc.date.year, doc.date.month, doc.date.day))
 
         self._author_edit.blockSignals(False)
+        self._author_short_edit.blockSignals(False)
         self._title_edit.blockSignals(False)
         self._date_edit.blockSignals(False)
 

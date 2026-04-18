@@ -330,11 +330,11 @@ class Madescha(QObject):
         """
         if self._doc_info:
             date = str(self._doc_info.date)
-            author = snakecase(self._doc_info.author)
+            author = snakecase(self._doc_info.author_short)
             title = snakecase(self._doc_info.title)
-            if self._doc:
-                author = snakecase(organisation_short_name(self._doc.sender))
-            return f"{author}__{title}__{date}"
+            # if self._doc:
+            #     author = snakecase(organisation_short_name(self._doc.sender))
+            return f"{author}__{title}__{date}.pdf"
         return None
 
     def export(self, directory: str) -> None:

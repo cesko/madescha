@@ -13,6 +13,10 @@ dev = [
     "pytest-cov>=4.1.0",
     "pytest-mock>=3.11.0",
     "case-converter"
+    "ollama"
+    "pyside6"
+    "pydantic"
+    "dataclasses"
 ]
 
 [tool.setuptools.packages.find]
