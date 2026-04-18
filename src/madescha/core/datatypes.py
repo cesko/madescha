@@ -27,7 +27,8 @@ from madescha.utils.utils import organisation_short_name
 class PersonOrOrganisation(BaseModel):
     name : str = Field("unknown", description="Name der Person oder Organisation")
     address: str = Field("unknown", description="Anschrift: Straße und Hausnummer, Postleitzahl, Stadt")
-    website : str = Field("unknown", description="Website. Wenn nicht explizit angegeben, dann nimm die Domain der E-Mailadresse")
+    website : str = Field("unknown", description="Website domain")
+    email : str = Field("unknown", description="E-Mailadresse")
 
 class Date(BaseModel):
     year : int = Field(0, description="Year")
@@ -73,10 +74,16 @@ class DocumentInfo:
     author : str = "unknown"
     author_short : str = "unknown"
     title : str = "unknown"
+    keywords: list[str] = field(default_factory=list)  # Fix: use field(default_factory=list)
 
     @staticmethod
     def fromDocument(doc:Document) -> DocumentInfo:
-        return DocumentInfo(doc.date, doc.sender.name, organisation_short_name(doc.sender.name, doc.sender.website), doc.title)
+        return DocumentInfo(
+            date = doc.date,
+            author = doc.sender.name,
+            author_short = organisation_short_name(doc.sender.name, doc.sender.website),
+            title = doc.title,
+            keywords = doc.keywords)
 
 
 @dataclass

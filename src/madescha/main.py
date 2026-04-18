@@ -2,6 +2,7 @@ import sys
 import os
 import argparse
 import threading
+
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QThread
 from PySide6.QtCore import QObject, Signal
@@ -11,12 +12,15 @@ from madescha.core.datatypes import DocumentInfo, Date, AutoProcessingStatus, Oc
 from madescha.core.ocr_processor import OcrProcessor
 from madescha.core.ollama_doc_parser import OllamaDocumentParser
 from madescha.utils.utils import organisation_short_name
+from madescha.core.static_doc_parser import get_sender
+from madescha.utils.tagging import PdfMetadata, apply_pdf_metadata, apply_file_tags
+from madescha.core.config import MadeschaConfig
+
 
 from caseconverter import snakecase
 
 
-class MadeschaConfig():
-    automatically_parse_opened_documents = True
+
 
 
 class AutoProcessingWorker(QObject):
@@ -27,6 +31,7 @@ class AutoProcessingWorker(QObject):
     status_changed = Signal(AutoProcessingStatus)
     finished = Signal()
     llm_parsing_result = Signal(Document)
+    file_exported = Signal()
 
     def __init__(
         self,
@@ -115,17 +120,25 @@ class AutoProcessingWorker(QObject):
             doc = self._llm_parser.get_document_info(ocr_text)
             self.llm_parsing_result.emit(doc)
             print(f"LLM Parsed Data: {doc}")
-            doc_info = DocumentInfo.fromDocument(doc)
             llm_success = True
             llm_message = "LLM parsing done."
         except Exception as e:
             doc_info = DocumentInfo()
             llm_success = False
             llm_message = str(e)
-
+        
+        self.status_changed.emit(status)
+        
+        # --- Static Parser Stage --
+        status.status_message = f"{llm_message}. Running static parser"
+        doc.sender = get_sender(ocr_text, doc.sender)
+        print(doc)
+        
+        doc_info = DocumentInfo.fromDocument(doc)
+    
         status.running = False
-        status.success = llm_success
-        status.status_message = llm_message
+        status.success = True
+        status.status_message =  "Done" if llm_success else f"Static parsing only. LLM failed: {llm_message}"
         status.fields = doc_info
         self.status_changed.emit(status)
         print(status.status_message)
@@ -153,10 +166,11 @@ class Madescha(QObject):
     pdf_loaded = Signal(str)
     pdf_load_failed = Signal(str)
     auto_processing_status_changed = Signal(AutoProcessingStatus)
+    pdf_exported = Signal()
 
-    def __init__(self):
+    def __init__(self, config:MadeschaConfig):
         super().__init__()
-        self._config = MadeschaConfig()
+        self._config = config
         self._document_path: str | None = None
         self._ocr_processor = OcrProcessor()
         self._llm_parser = OllamaDocumentParser()
@@ -288,6 +302,9 @@ class Madescha(QObject):
             doc: The parsed Document object.
         """
         self._doc = doc
+    
+    def set_document_info(self, doc_info:DocumentInfo):
+        self._doc_info = doc_info
 
     def stop_auto_processing(self) -> None:
         """
@@ -350,6 +367,16 @@ class Madescha(QObject):
             return
         path = os.path.join(directory, filename)
         print(f"export to {path}")
+        self._ocr_processor.export(path)
+
+        metadata = PdfMetadata.fromDocumentInfo(self._doc_info)
+        apply_pdf_metadata(path, metadata)
+        print(f"PDF metadata applied to {path}")
+
+        apply_file_tags(path, metadata)
+        print(f"File tags applied to {path}")
+
+        self.pdf_exported.emit()
 
 
 def main():
@@ -395,12 +422,15 @@ def gui(file: str | None = None) -> None:
     app.setApplicationName("Madescha")
     app.setApplicationVersion("0.0.1")
 
-    # Madescha stays on the main thread — no need to move it
-    madescha = Madescha()
+    config = MadeschaConfig()
 
-    window = MainWindow()
+    # Madescha stays on the main thread — no need to move it
+    madescha = Madescha(config)
+
+    window = MainWindow(config)
 
     window.file_selected.connect(madescha.open_document)
+    window.document_info_updated.connect(madescha.set_document_info)
     madescha.pdf_loaded.connect(window.open_pdf)
     madescha.auto_processing_status_changed.connect(window.set_auto_processing)
     window._export_widget.export_directory_selected.connect(madescha.export)

@@ -12,11 +12,12 @@ from PySide6.QtWidgets import (
     QApplication, QDialog, QFileDialog, QLabel, QLineEdit, QMainWindow, 
     QMessageBox, QPushButton, QVBoxLayout, QHBoxLayout, QGroupBox, 
     QFormLayout, QWidget, QSpinBox, QDoubleSpinBox, QSizePolicy, QTextEdit,
-    QDialogButtonBox, QDateEdit
+    QDialogButtonBox, QDateEdit,
 )
 from PySide6.QtCore import Qt, Signal, Slot, QDate
 
 from madescha.core.datatypes import AutoProcessingStatus, DocumentInfo, Date
+from madescha.core.config import MadeschaConfig
 
 
 class OpenFileWidget(QWidget):
@@ -24,13 +25,14 @@ class OpenFileWidget(QWidget):
     
     file_selected = Signal(str)
     
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, config:MadeschaConfig, parent: QWidget | None = None) -> None:
         """Initialize the OpenFile widget.
         
         Args:
             parent: Optional parent widget.
         """
         super().__init__(parent)
+        self._config = config
         self._setup_ui()
     
     def _setup_ui(self) -> None:
@@ -117,13 +119,14 @@ class ProcessingWidget(QWidget):
         ProcessingState.FAILED: "❌",
     }
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, config:MadeschaConfig, parent: QWidget | None = None) -> None:
         """Initialize the Processing widget.
 
         Args:
             parent: Optional parent widget.
         """
         super().__init__(parent)
+        self._config = config
         self._state: ProcessingState = ProcessingState.NONE
         self._setup_ui()
         self._ocr_text = ""
@@ -229,7 +232,6 @@ class ProcessingWidget(QWidget):
         dialog = TextDialog(self._ocr_text, parent=self)
         dialog.exec()
 
-
 class DocumentInfoWidget(QWidget):
     """
     A form widget that displays and edits document metadata.
@@ -242,8 +244,9 @@ class DocumentInfoWidget(QWidget):
 
     info_updated = Signal(DocumentInfo)
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, config:MadeschaConfig, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self._config = config
         self._build_ui()
         self._connect_signals()
 
@@ -271,10 +274,14 @@ class DocumentInfoWidget(QWidget):
         self._date_edit.setDisplayFormat("yyyy-MM-dd")
         self._date_edit.setDate(QDate(1, 1, 1))  # matches Date() defaults
 
+        self._keywords_edit = QLineEdit(self)
+        self._keywords_edit.setPlaceholderText("keyword1, keyword2, ...")
+
         layout.addRow("Author", self._author_edit)
         layout.addRow("Author Short", self._author_short_edit)
         layout.addRow("Title", self._title_edit)
         layout.addRow("Date", self._date_edit)
+        layout.addRow("Keywords", self._keywords_edit)
 
         main_layout.addWidget(group_box)
 
@@ -284,13 +291,42 @@ class DocumentInfoWidget(QWidget):
         self._author_short_edit.textChanged.connect(self._on_field_changed)
         self._title_edit.textChanged.connect(self._on_field_changed)
         self._date_edit.dateChanged.connect(self._on_field_changed)
+        self._keywords_edit.textChanged.connect(self._on_field_changed)
 
     # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
+    def _parse_keywords(self) -> list[str]:
+        """
+        Parse the keywords field into a list of stripped, non-empty strings.
+
+        Returns
+        -------
+        list[str]
+            List of keywords split by comma.
+        """
+        raw: str = self._keywords_edit.text()
+        return [kw.strip() for kw in raw.split(",") if kw.strip()]
+
+    def _keywords_to_str(self, keywords: list[str]) -> str:
+        """
+        Convert a list of keywords to a comma-separated string.
+
+        Parameters
+        ----------
+        keywords:
+            List of keyword strings.
+
+        Returns
+        -------
+        str
+            Comma-separated representation of the keywords.
+        """
+        return ", ".join(keywords)
+
     def _current_document(self) -> DocumentInfo:
-        """Build a :class:`DocumentFields` snapshot from the current UI state."""
+        """Build a :class:`DocumentInfo` snapshot from the current UI state."""
         q_date: QDate = self._date_edit.date()
         return DocumentInfo(
             author=self._author_edit.text() or "unknown",
@@ -301,10 +337,11 @@ class DocumentInfoWidget(QWidget):
                 month=q_date.month(),
                 day=q_date.day(),
             ),
+            keywords=self._parse_keywords(),
         )
 
     def _on_field_changed(self, *_args: object) -> None:
-        """Emit :attr:`document_changed` whenever any field is edited."""
+        """Emit :attr:`info_updated` whenever any field is edited."""
         self.info_updated.emit(self._current_document())
 
     # ------------------------------------------------------------------
@@ -319,24 +356,27 @@ class DocumentInfoWidget(QWidget):
         Parameters
         ----------
         doc:
-            A :class:`DocumentFields` instance whose values will be written
+            A :class:`DocumentInfo` instance whose values will be written
             into the form widgets.
         """
-        # Block individual signals so we emit document_changed only once.
+        # Block individual signals so we emit info_updated only once.
         self._author_edit.blockSignals(True)
         self._author_short_edit.blockSignals(True)
         self._title_edit.blockSignals(True)
         self._date_edit.blockSignals(True)
+        self._keywords_edit.blockSignals(True)
 
         self._author_edit.setText(doc.author)
         self._author_short_edit.setText(doc.author_short)
         self._title_edit.setText(doc.title)
         self._date_edit.setDate(QDate(doc.date.year, doc.date.month, doc.date.day))
+        self._keywords_edit.setText(self._keywords_to_str(doc.keywords))
 
         self._author_edit.blockSignals(False)
         self._author_short_edit.blockSignals(False)
         self._title_edit.blockSignals(False)
         self._date_edit.blockSignals(False)
+        self._keywords_edit.blockSignals(False)
 
         self.info_updated.emit(self._current_document())
 
@@ -376,6 +416,19 @@ class DocumentInfoWidget(QWidget):
         """
         self._date_edit.setDate(QDate(date.year, date.month, date.day))
 
+    @Slot(list)
+    def set_keywords(self, keywords: list[str]) -> None:
+        """
+        Update only the *keywords* field.
+
+        Parameters
+        ----------
+        keywords:
+            List of keyword strings that will be joined with commas.
+        """
+        self._keywords_edit.setText(self._keywords_to_str(keywords))
+
+
 
 
 class ExportWidget(QWidget):
@@ -390,8 +443,9 @@ class ExportWidget(QWidget):
 
     export_directory_selected = Signal(str)
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, config:MadeschaConfig, parent: QWidget | None = None) -> None:
         super().__init__(parent)
+        self._config = config
         self._setup_ui()
 
     def _setup_ui(self) -> None:
@@ -411,9 +465,12 @@ class ExportWidget(QWidget):
 
     def _on_export_clicked(self) -> None:
         """Open a directory selection dialog and emit the selected path."""
+
         directory = QFileDialog.getExistingDirectory(
             self,
             "Select Export Directory",
+            #self._config.export_root_directory,
+            options=QFileDialog.Option()
         )
         if directory:
             self.export_directory_selected.emit(directory)

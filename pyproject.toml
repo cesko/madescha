@@ -17,6 +17,8 @@ dev = [
     "pyside6"
     "pydantic"
     "dataclasses"
+    "pypdf"
+    "xattr"
 ]
 
 [tool.setuptools.packages.find]

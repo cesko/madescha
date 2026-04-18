@@ -27,12 +27,12 @@ Helps you organise important documents, letters, certificates, with out vendor l
  - [x] Hold and Process Document in Main
  - [x] Define and Implement OcrProcessor Class
  - [x] Integrate LLM Processing in Main 
- - [ ] Full processing pipeline in Main
+ - [x] Full processing pipeline in Main
  - [x] Connect Open Documents -> Display Document in Document Viewer
  - [x] Run automated Process OCR/AI with status feedback
  - [x] Apply and edit document info
- - [ ] Implement Save Document Widget and the ability to save documents
- - [ ] Set tags for document
+ - [x] Implement Save Document Widget and the ability to save documents
+ - [x] Set tags for document
  - [ ] Settings file storage and load
  - [ ] Change settings in App
 
