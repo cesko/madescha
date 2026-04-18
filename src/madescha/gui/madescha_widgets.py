@@ -469,7 +469,7 @@ class ExportWidget(QWidget):
         directory = QFileDialog.getExistingDirectory(
             self,
             "Select Export Directory",
-            #self._config.export_root_directory,
+            dir=self._config.export_root_directory,
             options=QFileDialog.Option()
         )
         if directory:
