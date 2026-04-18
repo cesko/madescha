@@ -56,6 +56,23 @@ class OllamaDocumentParser:
         document = self._chat(f"Extract title, date, sender, receiver and keywords from this document\n\n {content}", Document)
         return document
     
+    def get_short_name(self, sender:PersonOrOrganisation) -> str:        
+        response = ollama.chat(
+            model = self._model,
+            messages=[
+                {
+                    "role": "user",
+                    "content": f"Get a short version of the name of the following person or organisation. If this is a person use flastname for firstname lastname. If this is a company with a website, use the domain name (without top level domain. If no website is given, remove any kind of GMBH or other legal stuff from the name. The person or organisation of interest is: name : {sender.name}. website : {sender.website}. Only provide the short name. No additional text or explanation",
+                }
+            ],
+            think=False,
+            options={
+                #"temperature": 0,  # More deterministic output
+            },
+    )
+        return response.message.content
+
+    
 
 if __name__ == "__main__":
 
@@ -380,6 +397,12 @@ Stadtwerke Musterstadt GmbH | Energiestraße 42 | 12345 Musterstadt
 
     doc = parser.get_document_info(example_content)
     print(doc)
+
+    short_name = parser.get_sender_short(doc.sender)
+    print(short_name)
+
+
+    print(parser.get_sender_short(doc.receiver))
 
     
 

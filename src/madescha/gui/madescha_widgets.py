@@ -106,7 +106,9 @@ class ProcessingState(Enum):
 class ProcessingWidget(QWidget):
     """Widget that displays processing state with action buttons and a status label."""
 
-    apply_fields_clicked = Signal()
+    apply_fields_clicked = Signal(DocumentInfo)
+    start_processing_requested = Signal()
+    stop_processing_requested = Signal()
 
     STATE_SYMBOLS: dict[ProcessingState, str] = {
         ProcessingState.NONE: "",
@@ -146,10 +148,16 @@ class ProcessingWidget(QWidget):
         top_row_layout.addStretch()
 
         button_layout = QVBoxLayout()
+        self._start_button = QPushButton("Start")
+        self._stop_button = QPushButton("Stop")
         self._view_text_button = QPushButton("View Text")
         self._apply_fields_button = QPushButton("Apply Fields")
         self._view_text_button.clicked.connect(self._open_ocr_text_dialog)
-        self._apply_fields_button.clicked.connect(self.apply_fields_clicked)
+        self._apply_fields_button.clicked.connect(self.apply_fields)
+        self._start_button.clicked.connect(self.start_processing_requested)
+        self._stop_button.clicked.connect(self.stop_processing_requested)
+        button_layout.addWidget(self._start_button)
+        button_layout.addWidget(self._stop_button)
         button_layout.addWidget(self._view_text_button)
         button_layout.addWidget(self._apply_fields_button)
         top_row_layout.addLayout(button_layout)
@@ -164,6 +172,7 @@ class ProcessingWidget(QWidget):
         main_layout.addWidget(group_box)
 
         self._update_ui()
+
 
     def _update_ui(self) -> None:
         """Update UI elements to reflect the current state."""
@@ -194,6 +203,10 @@ class ProcessingWidget(QWidget):
             text: The status message to display.
         """
         self._status_label.setText(text)
+    
+    def apply_fields(self) -> None:
+        self.apply_fields_clicked.emit(self._fields)
+
 
     @Slot(AutoProcessingStatus)
     def set_status(self, status:AutoProcessingStatus) -> None:
@@ -207,6 +220,9 @@ class ProcessingWidget(QWidget):
         self.set_status_text(status.status_message)
         self._ocr_text = status.ocr_text
         self._fields = status.fields
+
+        if status.success:
+            self.apply_fields()
 
     def _open_ocr_text_dialog(self) -> None:
         """Open the text dialog when the button is clicked."""
@@ -313,7 +329,7 @@ class DocumentInfoWidget(QWidget):
         self._title_edit.blockSignals(False)
         self._date_edit.blockSignals(False)
 
-        self.document_changed.emit(self._current_document())
+        self.info_updated.emit(self._current_document())
 
     @Slot(str)
     def set_author(self, author: str) -> None:
@@ -350,6 +366,50 @@ class DocumentInfoWidget(QWidget):
             A :class:`Date` instance with *year*, *month*, and *day*.
         """
         self._date_edit.setDate(QDate(date.year, date.month, date.day))
+
+
+
+class ExportWidget(QWidget):
+    """
+    Trigger document export.
+
+    Signals
+    -------
+    export_directory_selected : Signal(str)
+        Emitted when the export directory was selected.
+    """
+
+    export_directory_selected = Signal(str)
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._setup_ui()
+
+    def _setup_ui(self) -> None:
+        """Set up the user interface."""
+        # Group box
+        group_box = QGroupBox("Export")
+        group_layout = QVBoxLayout(group_box)
+
+        # Export button
+        self._export_button = QPushButton("Export")
+        self._export_button.clicked.connect(self._on_export_clicked)
+        group_layout.addWidget(self._export_button)
+
+        # Main layout
+        main_layout = QVBoxLayout(self)
+        main_layout.addWidget(group_box)
+
+    def _on_export_clicked(self) -> None:
+        """Open a directory selection dialog and emit the selected path."""
+        directory = QFileDialog.getExistingDirectory(
+            self,
+            "Select Export Directory",
+        )
+        if directory:
+            self.export_directory_selected.emit(directory)
+        
+
 
 if __name__ == "__main__":
     import sys

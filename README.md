@@ -26,10 +26,10 @@ Helps you organise important documents, letters, certificates, with out vendor l
  - [x] Add Slots / Signals for Medascha Widgets in Main Window
  - [x] Hold and Process Document in Main
  - [x] Define and Implement OcrProcessor Class
- - [ ] Integrate LLM Processing in Main 
+ - [x] Integrate LLM Processing in Main 
  - [ ] Full processing pipeline in Main
  - [x] Connect Open Documents -> Display Document in Document Viewer
- - [ ] Run automated Process OCR/AI with status feedback
+ - [x] Run automated Process OCR/AI with status feedback
  - [ ] Apply and edit document info
  - [ ] Implement Save Document Widget and the ability to save documents
  - [ ] Set tags for document

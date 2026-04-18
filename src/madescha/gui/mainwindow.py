@@ -12,7 +12,7 @@ from PySide6.QtWidgets import (
 )
 from PySide6.QtCore import Qt, Signal, Slot
 
-from madescha.gui.madescha_widgets import (OpenFileWidget, ProcessingWidget, DocumentInfoWidget)
+from madescha.gui.madescha_widgets import (OpenFileWidget, ProcessingWidget, DocumentInfoWidget, ExportWidget)
 
 from madescha.core.datatypes import DocumentInfo, Document, AutoProcessingStatus
 
@@ -22,7 +22,8 @@ class MainWindow(QMainWindow):
 
     file_selected = Signal(str)
     document_info_updated = Signal(DocumentInfo)
-    #auto_processing_requested = Signal()
+    start_auto_processing_requested = Signal()
+    stop_auto_processing_requested = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -50,7 +51,7 @@ class MainWindow(QMainWindow):
 
         # ── Right column: controls ───────────────────────────────────────────
         right_widget = QWidget(self)
-        right_widget.setFixedWidth(260)
+        right_widget.setFixedWidth(320)
         right_layout = QVBoxLayout(right_widget)
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(12)
@@ -58,13 +59,20 @@ class MainWindow(QMainWindow):
         self._open_file_widget = OpenFileWidget()
         self._processing_widget = ProcessingWidget()
         self._document_info_widget = DocumentInfoWidget()
+        self._export_widget = ExportWidget()
 
         right_layout.addWidget(self._open_file_widget)
         right_layout.addWidget(self._processing_widget)
         right_layout.addWidget(self._document_info_widget)
+        right_layout.addWidget(self._export_widget)
 
         # - connect -
         self._open_file_widget.file_selected.connect(self.file_selected)
+
+        self._processing_widget.start_processing_requested.connect(self.start_auto_processing_requested)
+        self._processing_widget.stop_processing_requested.connect(self.stop_auto_processing_requested)
+        self._processing_widget.apply_fields_clicked.connect(self._document_info_widget.set_document)
+
         self._document_info_widget.info_updated.connect(self.document_info_updated)
 
 
