@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=Madescha - Mach deine Scheiß Ablage!
+Exec=madescha %f
+MimeType=application/pdf;
+Type=Application
+Icon=madescha_icon_128x128
+Categories=Office;Viewer;
+StartupNotify=true

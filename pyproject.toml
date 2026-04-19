@@ -1,24 +1,28 @@
 [project]
 name = "madescha"
-version = "0.0.0"
+version = "0.0.1"
 description = "Document Sorting Helper"
 authors = [{ name = "cesko", email = "you@example.com" }]
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = []
+
+dependencies = [
+    "pyside6",
+    "pydantic",
+    "pypdf",
+    "ollama",
+    "xattr",
+    "case-converter",
+    "tldextract",
+    "ocrmypdf",
+    "PyMuPDF",
+]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",
     "pytest-cov>=4.1.0",
     "pytest-mock>=3.11.0",
-    "case-converter"
-    "ollama"
-    "pyside6"
-    "pydantic"
-    "dataclasses"
-    "pypdf"
-    "xattr"
 ]
 
 [tool.setuptools.packages.find]
