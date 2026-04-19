@@ -26,6 +26,8 @@ class MainWindow(QMainWindow):
     start_auto_processing_requested = Signal()
     stop_auto_processing_requested = Signal()
 
+    delete_original_file_requested = Signal()
+
     def __init__(self, config:MadeschaConfig, parent=None, ):
         super().__init__(parent)
         self._config = config
@@ -33,6 +35,7 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Madescha")
         self.resize(1200, 800)
 
+        self._document_path = None
         self._document = QPdfDocument(self)
 
         # Central widget and main horizontal layout
@@ -85,18 +88,87 @@ class MainWindow(QMainWindow):
 
         self._update_controls()
 
+    def reset(self):
+        pass
+
     # ── Slots ────────────────────────────────────────────────────────────────
 
     def open_pdf(self, path: str) -> None:
         """Load a PDF from *path*, showing an error dialog on failure."""
+        self._document_path = path
         result = self._document.load(path)
         if result != QPdfDocument.Error.None_:
             QMessageBox.critical(self, "Error", f"Could not open PDF:\n{path}")
             return
+        
+        self._open_file_widget.set_current_file(path)
 
     def set_auto_processing(self, status:AutoProcessingStatus):
         self._processing_widget.set_status(status)
         pass
+
+    def post_export_dialog(self, export_path: str) -> None:
+        """Open dialog to tell the file has been exported and request further action"""
+
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Export Successful")
+        dialog.setModal(True)
+        dialog.setMinimumWidth(400)
+
+        layout = QVBoxLayout(dialog)
+        layout.setSpacing(12)
+        layout.setContentsMargins(20, 20, 20, 20)
+
+        # Message label
+        message_label = QLabel(f"File has been successfully exported to:\n{export_path}")
+        message_label.setWordWrap(True)
+        message_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        layout.addWidget(message_label)
+
+        # Question label
+        action_label = QLabel("Would you like to delete the original file?")
+        action_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        layout.addWidget(action_label)
+
+        layout.addSpacing(8)
+
+        # Buttons layout
+        button_layout = QHBoxLayout()
+        button_layout.setSpacing(8)
+        button_layout.addStretch()
+
+        # Delete button
+        delete_button = QPushButton("Delete")
+        delete_button.setToolTip("Delete the original file")
+        delete_button.setMinimumWidth(90)
+        button_layout.addWidget(delete_button)
+
+        # Cancel button
+        cancel_button = QPushButton("Cancel")
+        cancel_button.setToolTip("Leave the origninal file in place")
+        cancel_button.setMinimumWidth(90)
+        button_layout.addWidget(cancel_button)
+
+        layout.addLayout(button_layout)
+
+        # Button actions
+        def on_delete() -> None:
+            self.delete_original_file_requested.emit()
+            dialog.accept()
+
+        def on_cancel() -> None:
+            dialog.reject()
+
+        delete_button.clicked.connect(on_delete)
+        cancel_button.clicked.connect(on_cancel)
+
+        # Set Cancel as default/escape button
+        cancel_button.setDefault(True)
+        dialog.setWindowFlag(Qt.WindowType.WindowCloseButtonHint, True)
+
+        result = dialog.exec()
+        #if result == QDialog.DialogCode.Accepted:
+
 
     def _open_pdf(self) -> None:
         """Open a file dialog to select and load a PDF."""
@@ -109,6 +181,11 @@ class MainWindow(QMainWindow):
     def _close_pdf(self) -> None:
         """Close the currently loaded PDF document."""
         self._document.close()
+        self._document_path = None
+        self._open_file_widget.reset()
+        self._processing_widget.reset()
+        self._document_info_widget.reset()
+        self._export_widget.reset()
        
     def _fit_to_width(self) -> None:
         """Set zoom mode to fit the page width."""
@@ -117,6 +194,19 @@ class MainWindow(QMainWindow):
     def _update_controls(self) -> None:
         """Enable or disable controls depending on whether a document is loaded."""
         pass
+
+
+    def display_error(self, msg: str) -> None:
+        """Display an Error Message Box with the error"""
+        error_box = QMessageBox(self)
+        error_box.setIcon(QMessageBox.Icon.Critical)
+        error_box.setWindowTitle("Error")
+        error_box.setText(msg)
+        error_box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        error_box.exec()
+
+
+    
 
 
 if __name__ == "__main__":

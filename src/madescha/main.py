@@ -20,9 +20,6 @@ from madescha.core.config import MadeschaConfig
 from caseconverter import snakecase
 
 
-
-
-
 class AutoProcessingWorker(QObject):
     """
     Worker that runs the OCR + LLM auto processing pipeline in a separate thread.
@@ -32,6 +29,7 @@ class AutoProcessingWorker(QObject):
     finished = Signal()
     llm_parsing_result = Signal(Document)
     file_exported = Signal()
+    
 
     def __init__(
         self,
@@ -166,7 +164,10 @@ class Madescha(QObject):
     pdf_loaded = Signal(str)
     pdf_load_failed = Signal(str)
     auto_processing_status_changed = Signal(AutoProcessingStatus)
-    pdf_exported = Signal()
+    pdf_exported = Signal(str)
+    file_closed = Signal()
+
+    display_error = Signal(str)
 
     def __init__(self, config:MadeschaConfig):
         super().__init__()
@@ -199,10 +200,27 @@ class Madescha(QObject):
         if self._config.automatically_parse_opened_documents:
             self.start_auto_processing()
 
-    def close_document(self) -> None:
+    def close_document(self, delete=False) -> None:
         """Close the current document and stop any active processing."""
         self.stop_auto_processing()
+        self.file_closed.emit()
+
+        if delete:
+            self.delete_file(self._document_path)          
+
         self._document_path = None
+
+    def delete_file(self, path):
+        import os
+        try:
+            if os.path.exists(path):
+                os.remove(path)
+                print("File deleted")
+            else:
+                print("File not found!")
+        except OSError as e:
+            print(f"Failed to delete the file:\n{e}")
+
 
     def run_ocr(self) -> OcrResult:
         """
@@ -364,9 +382,16 @@ class Madescha(QObject):
         filename = self.get_export_filename()
         if filename is None:
             print("Cannot export: no document info available.")
+            self.display_error.emit("Export failed! no document info available!")
             return
         path = os.path.join(directory, filename)
         print(f"export to {path}")
+
+        if os.path.exists(path):
+            self.display_error.emit("Export failed! File already exists!. Suggestion: Change title")
+            print("Cannot export: File already exists!. Suggestion: Change title")
+            return
+
         self._ocr_processor.export(path)
 
         metadata = PdfMetadata.fromDocumentInfo(self._doc_info)
@@ -376,7 +401,7 @@ class Madescha(QObject):
         apply_file_tags(path, metadata)
         print(f"File tags applied to {path}")
 
-        self.pdf_exported.emit()
+        self.pdf_exported.emit(path)
 
 
 def main():
@@ -431,9 +456,15 @@ def gui(file: str | None = None) -> None:
 
     window.file_selected.connect(madescha.open_document)
     window.document_info_updated.connect(madescha.set_document_info)
+    window._export_widget.export_directory_selected.connect(madescha.export)
+    window.document_info_updated.connect(madescha.set_document_info)
+    window.delete_original_file_requested.connect(lambda : madescha.close_document(delete=True))
+    
     madescha.pdf_loaded.connect(window.open_pdf)
     madescha.auto_processing_status_changed.connect(window.set_auto_processing)
-    window._export_widget.export_directory_selected.connect(madescha.export)
+    madescha.pdf_exported.connect(window.post_export_dialog)
+    madescha.file_closed.connect(window._close_pdf)
+    madescha.display_error.connect(window.display_error)
 
     # Ensure any running worker is stopped cleanly when the app exits
     app.aboutToQuit.connect(madescha.stop_auto_processing)

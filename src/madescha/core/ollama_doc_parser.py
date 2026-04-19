@@ -6,6 +6,7 @@ class OllamaDocumentParser:
 
     def __init__(self, model:str = "phi4-mini"):
         self._model = model
+        self._temperature = 0
 
     def _generate_system_prompt(self, response_scheme:str) -> dict:
         return {
@@ -30,7 +31,7 @@ class OllamaDocumentParser:
             format=repsonse_class.model_json_schema(),
             think=False,
             options={
-                #"temperature": 0,  # More deterministic output
+                "temperature": self._temperature,
             },
         )
     
@@ -56,21 +57,21 @@ class OllamaDocumentParser:
         document = self._chat(f"Extract title, date, sender, receiver and keywords from this document\n\n {content}", Document)
         return document
     
-    def get_short_name(self, sender:PersonOrOrganisation) -> str:        
-        response = ollama.chat(
-            model = self._model,
-            messages=[
-                {
-                    "role": "user",
-                    "content": f"Get a short version of the name of the following person or organisation. If this is a person use flastname for firstname lastname. If this is a company with a website, use the domain name (without top level domain. If no website is given, remove any kind of GMBH or other legal stuff from the name. The person or organisation of interest is: name : {sender.name}. website : {sender.website}. Only provide the short name. No additional text or explanation",
-                }
-            ],
-            think=False,
-            options={
-                #"temperature": 0,  # More deterministic output
-            },
-    )
-        return response.message.content
+    # def get_short_name(self, sender:PersonOrOrganisation) -> str:        
+    #     response = ollama.chat(
+    #         model = self._model,
+    #         messages=[
+    #             {
+    #                 "role": "user",
+    #                 "content": f"Get a short version of the name of the following person or organisation. If this is a person use flastname for firstname lastname. If this is a company with a website, use the domain name (without top level domain. If no website is given, remove any kind of GMBH or other legal stuff from the name. The person or organisation of interest is: name : {sender.name}. website : {sender.website}. Only provide the short name. No additional text or explanation",
+    #             }
+    #         ],
+    #         think=False,
+    #         options={
+    #             #"temperature": 0,  # More deterministic output
+    #         },
+    # )
+    #     return response.message.content
 
     
 

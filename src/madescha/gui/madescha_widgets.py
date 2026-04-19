@@ -34,6 +34,11 @@ class OpenFileWidget(QWidget):
         super().__init__(parent)
         self._config = config
         self._setup_ui()
+
+    def reset(self) -> None:
+        self._current_file_label.setText("")
+
+
     
     def _setup_ui(self) -> None:
         """Set up the user interface components."""
@@ -44,9 +49,18 @@ class OpenFileWidget(QWidget):
         
         self._open_button = QPushButton("Open File")
         self._open_button.clicked.connect(self._on_open_file)
+
+        self._current_file_label = QLabel("")
+
         group_layout.addWidget(self._open_button)
+        group_layout.addWidget(self._current_file_label)
         
         main_layout.addWidget(group_box)
+
+
+    def set_current_file(self, path:str):
+        self._current_file_label.setText(path)
+
     
     def _on_open_file(self) -> None:
         """Handle the open file button click and emit the selected file path."""
@@ -126,11 +140,16 @@ class ProcessingWidget(QWidget):
             parent: Optional parent widget.
         """
         super().__init__(parent)
-        self._config = config
-        self._state: ProcessingState = ProcessingState.NONE
         self._setup_ui()
+        self.reset()
+        self._update_ui()
+
+    def reset(self) -> None:
+        self._state: ProcessingState = ProcessingState.NONE
         self._ocr_text = ""
         self._fields = DocumentInfo()
+        self.set_status_text("")
+        self._update_ui()
 
     def _setup_ui(self) -> None:
         """Set up the user interface components."""
@@ -173,8 +192,7 @@ class ProcessingWidget(QWidget):
         group_layout.addWidget(self._status_label)
 
         main_layout.addWidget(group_box)
-
-        self._update_ui()
+        
 
 
     def _update_ui(self) -> None:
@@ -249,6 +267,31 @@ class DocumentInfoWidget(QWidget):
         self._config = config
         self._build_ui()
         self._connect_signals()
+    
+    def reset(self) -> None:
+        self._author_edit.blockSignals(True)
+        self._author_short_edit.blockSignals(True)
+        self._title_edit.blockSignals(True)
+        self._date_edit.blockSignals(True)
+        self._keywords_edit.blockSignals(True)
+
+        self._author_edit.clear()
+        self._author_short_edit.clear()
+        self._title_edit.clear()
+        self._keywords_edit.clear()
+
+        self._author_edit.setPlaceholderText("unknown")
+        self._author_short_edit.setPlaceholderText("unknown")
+        self._title_edit.setPlaceholderText("unknown")
+        self._date_edit.setDate(QDate.currentDate())
+        self._keywords_edit.setPlaceholderText("keyword1, keyword2, ...")
+
+        self._author_edit.blockSignals(False)
+        self._author_short_edit.blockSignals(False)
+        self._title_edit.blockSignals(False)
+        self._date_edit.blockSignals(False)
+        self._keywords_edit.blockSignals(False)
+        print("Document Info Widget Reset")
 
     # ------------------------------------------------------------------
     # UI construction
@@ -261,21 +304,16 @@ class DocumentInfoWidget(QWidget):
         layout = QFormLayout(group_box)
 
         self._author_edit = QLineEdit(self)
-        self._author_edit.setPlaceholderText("unknown")
 
         self._author_short_edit = QLineEdit(self)
-        self._author_short_edit.setPlaceholderText("unknown")
 
         self._title_edit = QLineEdit(self)
-        self._title_edit.setPlaceholderText("unknown")
 
         self._date_edit = QDateEdit(self)
         self._date_edit.setCalendarPopup(True)
         self._date_edit.setDisplayFormat("yyyy-MM-dd")
-        self._date_edit.setDate(QDate(1, 1, 1))  # matches Date() defaults
 
         self._keywords_edit = QLineEdit(self)
-        self._keywords_edit.setPlaceholderText("keyword1, keyword2, ...")
 
         layout.addRow("Author", self._author_edit)
         layout.addRow("Author Short", self._author_short_edit)
@@ -284,6 +322,7 @@ class DocumentInfoWidget(QWidget):
         layout.addRow("Keywords", self._keywords_edit)
 
         main_layout.addWidget(group_box)
+        self.reset()
 
     def _connect_signals(self) -> None:
         """Wire internal widget signals to the unified change handler."""
@@ -360,6 +399,8 @@ class DocumentInfoWidget(QWidget):
             into the form widgets.
         """
         # Block individual signals so we emit info_updated only once.
+        print("Document Info Widget: New Document Info")
+
         self._author_edit.blockSignals(True)
         self._author_short_edit.blockSignals(True)
         self._title_edit.blockSignals(True)
@@ -447,6 +488,9 @@ class ExportWidget(QWidget):
         super().__init__(parent)
         self._config = config
         self._setup_ui()
+
+    def reset(self) -> None:
+        pass
 
     def _setup_ui(self) -> None:
         """Set up the user interface."""
