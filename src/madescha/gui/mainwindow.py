@@ -11,13 +11,13 @@ from PySide6.QtWidgets import (
     QFormLayout, QWidget, QSpinBox, QDoubleSpinBox, QSizePolicy, QSpacerItem
 )
 from PySide6.QtCore import Qt, Signal, Slot
+from PySide6.QtGui import QAction
 
 from madescha.gui.madescha_widgets import (OpenFileWidget, ProcessingWidget, DocumentInfoWidget, ExportWidget)
 from madescha.gui.madescha_config_dialog import MadeschaConfigDialog
 
 from madescha.core.datatypes import DocumentInfo, Document, AutoProcessingStatus
 from madescha.core.config import MadeschaConfig
-
 
 class MainWindow(QMainWindow):
     """Main window with a two-column layout: PDF viewer on the left, controls on the right."""
@@ -29,7 +29,7 @@ class MainWindow(QMainWindow):
 
     delete_original_file_requested = Signal()
 
-    def __init__(self, config:MadeschaConfig, parent=None, ):
+    def __init__(self, config: MadeschaConfig, parent=None):
         super().__init__(parent)
         self._config = config
 
@@ -38,6 +38,9 @@ class MainWindow(QMainWindow):
 
         self._document_path = None
         self._document = QPdfDocument(self)
+
+        # ── Menu bar ─────────────────────────────────────────────────────────
+        self._setup_menu_bar()
 
         # Central widget and main horizontal layout
         central_widget = QWidget(self)
@@ -63,23 +66,10 @@ class MainWindow(QMainWindow):
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(12)
 
-        # -- Config
-
-        settings_button = QPushButton("⚙")
-        settings_button.setFixedWidth(50)
-        settings_button.setFixedHeight(30)
-        settings_button.clicked.connect(self._open_settings)
-        settings_layout = QHBoxLayout()
-        settings_layout.addStretch()
-        settings_layout.addWidget(settings_button)
-        right_layout.addLayout(settings_layout)
-
-
         self._open_file_widget = OpenFileWidget(self._config)
         self._processing_widget = ProcessingWidget(self._config)
         self._document_info_widget = DocumentInfoWidget(self._config)
         self._export_widget = ExportWidget(self._config)
-
 
         right_layout.addWidget(self._open_file_widget)
         right_layout.addWidget(self._processing_widget)
@@ -102,6 +92,18 @@ class MainWindow(QMainWindow):
 
         self._update_controls()
 
+    def _setup_menu_bar(self) -> None:
+        """Create and populate the top menu bar."""
+        menu_bar = self.menuBar()
+
+        # File menu
+        file_menu = menu_bar.addMenu("File")
+
+        settings_action = QAction("Settings", self)
+        settings_action.setStatusTip("Open application settings")
+        settings_action.triggered.connect(self._open_settings)
+        file_menu.addAction(settings_action)
+
     def reset(self):
         pass
 
@@ -114,16 +116,15 @@ class MainWindow(QMainWindow):
         if result != QPdfDocument.Error.None_:
             QMessageBox.critical(self, "Error", f"Could not open PDF:\n{path}")
             return
-        
+
         self._open_file_widget.set_current_file(path)
 
-    def set_auto_processing(self, status:AutoProcessingStatus):
+    def set_auto_processing(self, status: AutoProcessingStatus):
+        """Update the processing widget with the current auto-processing status."""
         self._processing_widget.set_status(status)
-        pass
 
     def post_export_dialog(self, export_path: str) -> None:
-        """Open dialog to tell the file has been exported and request further action"""
-
+        """Open dialog to tell the file has been exported and request further action."""
         dialog = QDialog(self)
         dialog.setWindowTitle("Export Successful")
         dialog.setModal(True)
@@ -159,7 +160,7 @@ class MainWindow(QMainWindow):
 
         # Cancel button
         cancel_button = QPushButton("Cancel")
-        cancel_button.setToolTip("Leave the origninal file in place")
+        cancel_button.setToolTip("Leave the original file in place")
         cancel_button.setMinimumWidth(90)
         button_layout.addWidget(cancel_button)
 
@@ -176,13 +177,10 @@ class MainWindow(QMainWindow):
         delete_button.clicked.connect(on_delete)
         cancel_button.clicked.connect(on_cancel)
 
-        # Set Cancel as default/escape button
         cancel_button.setDefault(True)
         dialog.setWindowFlag(Qt.WindowType.WindowCloseButtonHint, True)
 
-        result = dialog.exec()
-        #if result == QDialog.DialogCode.Accepted:
-
+        dialog.exec()
 
     def _open_pdf(self) -> None:
         """Open a file dialog to select and load a PDF."""
@@ -200,7 +198,7 @@ class MainWindow(QMainWindow):
         self._processing_widget.reset()
         self._document_info_widget.reset()
         self._export_widget.reset()
-       
+
     def _fit_to_width(self) -> None:
         """Set zoom mode to fit the page width."""
         self._pdf_view.setZoomMode(QPdfView.ZoomMode.FitToWidth)
@@ -209,9 +207,8 @@ class MainWindow(QMainWindow):
         """Enable or disable controls depending on whether a document is loaded."""
         pass
 
-
     def display_error(self, msg: str) -> None:
-        """Display an Error Message Box with the error"""
+        """Display an Error Message Box with the error."""
         error_box = QMessageBox(self)
         error_box.setIcon(QMessageBox.Icon.Critical)
         error_box.setWindowTitle("Error")
@@ -223,9 +220,6 @@ class MainWindow(QMainWindow):
         """Opens the settings dialog."""
         dialog = MadeschaConfigDialog(self._config, parent=self)
         dialog.exec()
-
-
-    
 
 
 if __name__ == "__main__":

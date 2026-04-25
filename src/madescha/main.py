@@ -378,7 +378,7 @@ class Madescha(QObject):
             # if self._doc:
             #     author = snakecase(organisation_short_name(self._doc.sender))
             #return f"{author}__{title}__{date}.pdf"
-            return Template(self._config.export_format).substitute(mapping)
+            return Template(self._config.export_format).substitute(mapping) + ".pdf"
         
         
         return None
