@@ -16,6 +16,7 @@ dependencies = [
     "tldextract",
     "ocrmypdf",
     "PyMuPDF",
+    "confuse",
 ]
 
 [project.optional-dependencies]

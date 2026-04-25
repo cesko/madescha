@@ -2,6 +2,7 @@ import sys
 import os
 import argparse
 import threading
+from string import Template
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import QThread
@@ -363,13 +364,23 @@ class Madescha(QObject):
         Returns:
             Formatted filename string, or None if no doc info available.
         """
+
+        def default_case(string:str):
+            return snakecase(string)
+
         if self._doc_info:
-            date = str(self._doc_info.date)
-            author = snakecase(self._doc_info.author_short)
-            title = snakecase(self._doc_info.title)
+            mapping={
+                "date" : str(self._doc_info.date),
+                "author" : snakecase(self._doc_info.author_short),
+                "author_short" : snakecase(self._doc_info.author_short),
+                "title" : snakecase(self._doc_info.title),
+            }
             # if self._doc:
             #     author = snakecase(organisation_short_name(self._doc.sender))
-            return f"{author}__{title}__{date}.pdf"
+            #return f"{author}__{title}__{date}.pdf"
+            return Template(self._config.export_format).substitute(mapping)
+        
+        
         return None
 
     def export(self, directory: str) -> None:
@@ -448,6 +459,7 @@ def gui(file: str | None = None) -> None:
     app.setApplicationVersion("0.0.1")
 
     config = MadeschaConfig()
+    config.save()
 
     # Madescha stays on the main thread — no need to move it
     madescha = Madescha(config)

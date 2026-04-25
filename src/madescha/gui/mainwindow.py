@@ -8,11 +8,12 @@ from PySide6.QtPdf import QPdfDocument
 from PySide6.QtWidgets import (
     QApplication, QDialog, QFileDialog, QLabel, QLineEdit, QMainWindow, 
     QMessageBox, QPushButton, QVBoxLayout, QHBoxLayout, QGroupBox, 
-    QFormLayout, QWidget, QSpinBox, QDoubleSpinBox, QSizePolicy
+    QFormLayout, QWidget, QSpinBox, QDoubleSpinBox, QSizePolicy, QSpacerItem
 )
 from PySide6.QtCore import Qt, Signal, Slot
 
 from madescha.gui.madescha_widgets import (OpenFileWidget, ProcessingWidget, DocumentInfoWidget, ExportWidget)
+from madescha.gui.madescha_config_dialog import MadeschaConfigDialog
 
 from madescha.core.datatypes import DocumentInfo, Document, AutoProcessingStatus
 from madescha.core.config import MadeschaConfig
@@ -62,10 +63,23 @@ class MainWindow(QMainWindow):
         right_layout.setContentsMargins(0, 0, 0, 0)
         right_layout.setSpacing(12)
 
+        # -- Config
+
+        settings_button = QPushButton("⚙")
+        settings_button.setFixedWidth(50)
+        settings_button.setFixedHeight(30)
+        settings_button.clicked.connect(self._open_settings)
+        settings_layout = QHBoxLayout()
+        settings_layout.addStretch()
+        settings_layout.addWidget(settings_button)
+        right_layout.addLayout(settings_layout)
+
+
         self._open_file_widget = OpenFileWidget(self._config)
         self._processing_widget = ProcessingWidget(self._config)
         self._document_info_widget = DocumentInfoWidget(self._config)
         self._export_widget = ExportWidget(self._config)
+
 
         right_layout.addWidget(self._open_file_widget)
         right_layout.addWidget(self._processing_widget)
@@ -204,6 +218,11 @@ class MainWindow(QMainWindow):
         error_box.setText(msg)
         error_box.setStandardButtons(QMessageBox.StandardButton.Ok)
         error_box.exec()
+
+    def _open_settings(self) -> None:
+        """Opens the settings dialog."""
+        dialog = MadeschaConfigDialog(self._config, parent=self)
+        dialog.exec()
 
 
     
